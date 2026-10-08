@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Groq = require('groq-sdk');
 
+const { GROQ_MODEL, isReasoningModel, mapGroqErrorCode } = require('../config/groq');
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 router.post('/generate-itinerary', async (req, res) => {
@@ -80,8 +82,8 @@ Return ONLY a valid JSON object, no extra text, no markdown, no code fences:
 }`;
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+    const requestParams = {
+      model: GROQ_MODEL,
       messages: [
         {
           role: 'system',
@@ -92,27 +94,57 @@ Return ONLY a valid JSON object, no extra text, no markdown, no code fences:
           content: prompt
         }
       ],
+      response_format: { type: 'json_object' },
       temperature: 0.7,
-      max_tokens: 4000,
-    });
+      max_tokens: 8000,
+    };
 
-    const rawText = completion.choices[0].message.content;
+    if (isReasoningModel(GROQ_MODEL)) {
+      requestParams.reasoning_format = 'parsed';
+      requestParams.reasoning_effort = 'low';
+    }
+
+    const completion = await groq.chat.completions.create(requestParams);
+
+    const rawText = completion.choices[0]?.message?.content || '';
     console.log('Groq response received, length:', rawText.length);
 
-    let cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    let cleanText = rawText
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
       console.error('No JSON found in response');
-      return res.status(500).json({ error: 'Failed to parse AI response' });
+      return res.status(502).json({
+        message: 'Failed to generate itinerary',
+        code: 'BAD_AI_RESPONSE'
+      });
     }
 
-    const itinerary = JSON.parse(jsonMatch[0]);
+    let itinerary;
+    try {
+      itinerary = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('Failed to parse AI JSON:', parseError.message);
+      return res.status(502).json({
+        message: 'Failed to generate itinerary',
+        code: 'BAD_AI_RESPONSE'
+      });
+    }
+
     res.json({ success: true, itinerary });
 
   } catch (error) {
-    console.error('Groq Error:', error.message);
-    res.status(500).json({ error: 'Failed to generate itinerary', details: error.message });
+    const status = error?.status || error?.statusCode || 500;
+    console.error(`Groq Error [Status: ${status}]:`, error?.message || 'Unknown error');
+    const code = mapGroqErrorCode(status, error?.message);
+    res.status(status >= 400 && status < 600 ? status : 500).json({
+      message: 'Failed to generate itinerary',
+      code
+    });
   }
 });
 
