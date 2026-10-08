@@ -3,17 +3,20 @@ node_modules/
 client/node_modules/
 server/node_modules/
 
-# Environment files - NEVER commit these
+# Environment files - NEVER commit secrets
 .env
-.env.local
-.env.production
-.env.development
+.env.*
 server/.env
+server/.env.*
 client/.env
-client/.env.production
-client/.env.development
+client/.env.*
+!.env.example
+!server/.env.example
+!client/.env.example
 
 # Build output
+dist/
+build/
 client/dist/
 client/build/
 
@@ -24,4 +27,3 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
-"@ | Out-File -FilePath ".gitignore" -Encoding utf8
