@@ -9,22 +9,36 @@ export default function Dashboard({ onLoadItinerary, onNewTrip }) {
     const [deleting, setDeleting] = useState(null)
 
     useEffect(() => {
-        fetchItineraries()
-    }, [])
+        let isMounted = true
 
-    const fetchItineraries = async () => {
-        try {
-            const res = await fetch(`${API_URL}/api/itineraries/my-itineraries`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            const data = await res.json()
-            if (data.success) setItineraries(data.itineraries)
-        } catch (err) {
-            console.error('Failed to fetch itineraries')
-        } finally {
-            setLoading(false)
+        const loadItineraries = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/itineraries/my-itineraries`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                if (res.status === 401) {
+                    if (isMounted) logout()
+                    return
+                }
+                const data = await res.json()
+                if (data.success && isMounted) {
+                    setItineraries(data.itineraries)
+                }
+            } catch {
+                console.error('Failed to fetch itineraries')
+            } finally {
+                if (isMounted) {
+                    setLoading(false)
+                }
+            }
         }
-    }
+
+        loadItineraries()
+
+        return () => {
+            isMounted = false
+        }
+    }, [token, logout])
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this itinerary?')) return
@@ -34,11 +48,15 @@ export default function Dashboard({ onLoadItinerary, onNewTrip }) {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             })
+            if (res.status === 401) {
+                logout()
+                return
+            }
             const data = await res.json()
             if (data.success) {
-                setItineraries(itineraries.filter(i => i._id !== id))
+                setItineraries(prev => prev.filter(i => i._id !== id))
             }
-        } catch (err) {
+        } catch {
             console.error('Delete failed')
         } finally {
             setDeleting(null)
@@ -111,7 +129,7 @@ export default function Dashboard({ onLoadItinerary, onNewTrip }) {
                                 <div className="icard-actions">
                                     <button
                                         className="icard-btn view"
-                                        onClick={() => onLoadItinerary(item.itineraryData)}
+                                        onClick={() => onLoadItinerary(item.itineraryData, item._id)}
                                     >
                                         View
                                     </button>

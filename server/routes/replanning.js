@@ -3,10 +3,13 @@ const router = express.Router();
 const Groq = require('groq-sdk');
 
 const { GROQ_MODEL, isReasoningModel, mapGroqErrorCode } = require('../config/groq');
+const { protect } = require('../middleware/authMiddleware');
+const { aiLimiter } = require('../middleware/rateLimiter');
+const { validate, replanSchema } = require('../middleware/validate');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-router.post('/replan', async (req, res) => {
+router.post('/replan', protect, aiLimiter, validate(replanSchema), async (req, res, next) => {
     const { itinerary, userMessage } = req.body;
     console.log('Re-planning request:', userMessage);
 

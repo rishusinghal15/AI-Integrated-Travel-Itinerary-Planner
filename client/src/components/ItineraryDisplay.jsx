@@ -12,6 +12,7 @@ export default function ItineraryDisplay({ itinerary, onReset }) {
         let y = margin
 
         // Sanitize ALL text — removes ₹ (renders as ¹ in jsPDF) and all non-ASCII chars
+        // eslint-disable-next-line no-control-regex
         const clean = (str) => String(str || '').replace(/₹/g, 'Rs.').replace(/[^\x00-\x7F]/g, '')
 
         const checkNewPage = (neededHeight = 10) => {
@@ -313,14 +314,14 @@ export default function ItineraryDisplay({ itinerary, onReset }) {
                             <button className="book-btn flight" onClick={() => {
                                 const from = encodeURIComponent(itinerary.transport.originCity || '')
                                 const to = encodeURIComponent(itinerary.transport.destinationCity || '')
-                                window.open(`https://www.google.com/travel/flights?q=flights+from+${from}+to+${to}`, '_blank')
+                                window.open(`https://www.google.com/travel/flights?q=flights+from+${from}+to+${to}`, '_blank', 'noopener,noreferrer')
                             }}>✈️ Google Flights</button>
                             <button className="book-btn train" onClick={() => {
-                                window.open('https://www.irctc.co.in/nget/train-search', '_blank')
+                                window.open('https://www.irctc.co.in/nget/train-search', '_blank', 'noopener,noreferrer')
                             }}>🚆 IRCTC Train</button>
                             <button className="book-btn bus" onClick={() => {
                                 const to = encodeURIComponent(itinerary.transport.destinationCity || '')
-                                window.open(`https://www.redbus.in/bus-tickets/bus-to-${to.toLowerCase()}`, '_blank')
+                                window.open(`https://www.redbus.in/bus-tickets/bus-to-${to.toLowerCase()}`, '_blank', 'noopener,noreferrer')
                             }}>🚌 redBus</button>
                         </div>
                     </div>

@@ -24,4 +24,7 @@ const itinerarySchema = new mongoose.Schema({
     }
 });
 
+// Compound index for querying user itineraries sorted by creation date
+itinerarySchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Itinerary', itinerarySchema);
