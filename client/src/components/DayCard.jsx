@@ -2,7 +2,7 @@ export default function DayCard({ day, totalDays }) {
 
     const openMaps = (locationName) => {
         const query = encodeURIComponent(locationName)
-        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank')
+        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer')
     }
 
     const bookHotel = (platform, hotelName, location) => {
@@ -13,7 +13,7 @@ export default function DayCard({ day, totalDays }) {
             goibibo: `https://www.goibibo.com/hotels/hotels-in-${place.toLowerCase()}/`,
             agoda: `https://www.agoda.com/search?city=${place}&textToSearch=${hotel}`
         }
-        window.open(urls[platform], '_blank')
+        window.open(urls[platform], '_blank', 'noopener,noreferrer')
     }
 
     return (
@@ -69,7 +69,7 @@ export default function DayCard({ day, totalDays }) {
                 </div>
             )}
 
-            {day.accommodation && day.day !== day.totalDays && (
+            {day.accommodation && day.day !== totalDays && (
                 <div className="stay-section">
                     <h4>🏨 Where to Stay</h4>
                     <p><strong>{day.accommodation.name}</strong> — {day.accommodation.type}</p>

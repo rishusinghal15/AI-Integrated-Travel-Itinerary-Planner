@@ -8,16 +8,19 @@ export default function TravelForm({ onGenerate }) {
         travelers: '2',
         style: 'balanced'
     })
+    const [error, setError] = useState('')
 
     const handleChange = (e) => {
+        if (error) setError('')
         setForm({ ...form, [e.target.name]: e.target.value })
     }
 
     const handleSubmit = () => {
-        if (!form.destination || !form.budget) {
-            alert('Please fill in destination and budget!')
+        if (!form.destination.trim() || !form.budget) {
+            setError('Please fill in both destination and budget!')
             return
         }
+        setError('')
         onGenerate(form)
     }
 
@@ -86,6 +89,24 @@ export default function TravelForm({ onGenerate }) {
                     </select>
                 </div>
             </div>
+
+            {error && (
+                <div
+                    className="form-error"
+                    style={{
+                        color: '#e53e3e',
+                        backgroundColor: '#fff5f5',
+                        border: '1px solid #fed7d7',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        marginBottom: '16px',
+                        fontSize: '0.9rem',
+                        fontWeight: 500
+                    }}
+                >
+                    ⚠️ {error}
+                </div>
+            )}
 
             <button className="generate-btn" onClick={handleSubmit}>
                 🤖 Generate My Itinerary with AI

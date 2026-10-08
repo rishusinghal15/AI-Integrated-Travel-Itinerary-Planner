@@ -8,7 +8,7 @@ import ReplanChat from './components/ReplanChat'
 import API_URL from './config'
 
 function App() {
-  const { user, token, loading } = useAuth()
+  const { user, token, loading, logout } = useAuth()
   const [view, setView] = useState('dashboard') // dashboard | form | itinerary
   const [itinerary, setItinerary] = useState(null)
   const [pageLoading, setPageLoading] = useState(false)
@@ -41,15 +41,24 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/api/generate-itinerary`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       })
+
+      if (res.status === 401) {
+        logout()
+        return
+      }
+
       const data = await res.json()
       if (data.success) {
         setItinerary(data.itinerary)
         autoSave(data.itinerary, formData.style)
       } else {
-        setError('Failed to generate itinerary. Please try again.')
+        setError(data.message || 'Failed to generate itinerary. Please try again.')
       }
     } catch {
       setError('Cannot connect to server. Make sure the backend is running.')
@@ -68,6 +77,12 @@ function App() {
         },
         body: JSON.stringify({ itineraryData, travelStyle })
       })
+
+      if (res.status === 401) {
+        logout()
+        return
+      }
+
       const data = await res.json()
       if (data.success) {
         setSavedId(data.itinerary._id)
@@ -86,9 +101,18 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/api/replan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ itinerary, userMessage })
       })
+
+      if (res.status === 401) {
+        logout()
+        return
+      }
+
       const data = await res.json()
 
       if (data.success) {
@@ -110,7 +134,7 @@ function App() {
       } else {
         setChatHistory([...newHistory, {
           role: 'ai',
-          text: '⚠️ Sorry, I could not update the itinerary. Please try rephrasing.'
+          text: data.message || '⚠️ Sorry, I could not update the itinerary. Please try rephrasing.'
         }])
       }
     } catch {
@@ -131,10 +155,10 @@ function App() {
     setView('dashboard')
   }
 
-  const handleLoadItinerary = (itineraryData) => {
+  const handleLoadItinerary = (itineraryData, id = null) => {
     setItinerary(itineraryData)
     setChatHistory([])
-    setSavedId(null)
+    setSavedId(id)
     setView('itinerary')
   }
 
